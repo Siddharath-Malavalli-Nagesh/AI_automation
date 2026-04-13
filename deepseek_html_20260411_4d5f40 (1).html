@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI, Automation & Work — Acemoglu & Restrepo (2018) — Theory‑Consistent Simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161e;
+    --bg3: #1a1e2a;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f0ede8;
+    --muted: #7a7d8a;
+    --accent: #c8a97e;
+    --accent2: #7eb8c8;
+    --red: #e05c5c;
+    --green: #6db87a;
+    --amber: #d4924a;
+    --purple: #9b8fd4;
+    --blue: #5ba3d4;
+    --font-serif: 'DM Serif Display', Georgia, serif;
+    --font-sans: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .hero {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border2);
+    padding: 3rem 2rem 2.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(200,169,126,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  .hero h1 {
+    font-family: var(--font-serif);
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+  }
+  .hero h1 em { font-style: italic; color: var(--accent); }
+  .hero-sub {
+    font-size: 14px;
+    color: var(--muted);
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+
+  .main-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 860px) { .main-grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .panel-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .panel-body { padding: 1.25rem; }
+
+  .scenario-bar {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .scen-btn {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    padding: 5px 14px;
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .scen-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .scen-btn.active { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 500; }
+
+  .ctrl-group { margin-bottom: 1.1rem; }
+  .ctrl-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 5px;
+  }
+  .ctrl-label {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 400;
+  }
+  .ctrl-label sub { font-size: 10px; }
+  .ctrl-hint { font-size: 10px; color: var(--muted); }
+  .ctrl-val {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 500;
+    min-width: 38px;
+    text-align: right;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--bg3);
+    outline: none;
+    cursor: pointer;
+    margin-bottom: 3px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--bg);
+    transition: transform 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 680px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .metric-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.9rem 1rem;
+    transition: border-color 0.2s;
+  }
+  .metric-name {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .metric-val {
+    font-family: var(--font-mono);
+    font-size: 1.6rem;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--text);
+  }
+  .metric-val.red { color: var(--red); }
+  .metric-val.green { color: var(--green); }
+  .metric-delta {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-family: var(--font-mono);
+  }
+
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 680px) { .charts-grid { grid-template-columns: 1fr; } }
+
+  .chart-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem 0.75rem;
+  }
+  .chart-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .effect-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.5rem; }
+  .effect-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+    font-size: 12px;
+  }
+  .effect-name { color: var(--text); }
+  .effect-num { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  .effect-track {
+    height: 6px;
+    background: var(--bg3);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .effect-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.35s cubic-bezier(.4,0,.2,1);
+  }
+
+  .interp-box {
+    background: var(--bg3);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 1rem 1.25rem;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .interp-box strong { color: var(--text); font-weight: 500; }
+
+  .scen-desc {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 0.85rem 1rem;
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.65;
+    margin-bottom: 1.25rem;
+    display: none;
+  }
+  .scen-desc.visible { display: block; }
+
+  .task-vis {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .task-bar-wrap { position: relative; height: 28px; border-radius: 4px; overflow: hidden; background: var(--bg); margin-bottom: 6px; }
+  .task-seg {
+    position: absolute;
+    top: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    transition: width 0.35s, left 0.35s;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .task-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; font-size: 11px; color: var(--muted); }
+  .leg-item { display: flex; align-items: center; gap: 5px; }
+  .leg-dot { width: 20px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+
+  .section-title {
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    font-weight: 400;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .skill-grid { display: flex; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .skill-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    flex: 1;
+  }
+  .skill-name { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-family: var(--font-mono); }
+  .skill-val { font-family: var(--font-mono); font-size: 1.3rem; font-weight: 500; color: var(--text); }
+  .tooltip { border-bottom: 1px dashed var(--muted); cursor: help; }
+
+  footer {
+    text-align: center;
+    padding: 2rem;
+    font-size: 12px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-eyebrow">Interactive Simulation · NBER WP 24196</div>
+  <h1>Artificial Intelligence,<br><em>Automation</em> &amp; Work</h1>
+  <p class="hero-sub">Acemoglu & Restrepo (2018) — Task‑based framework. Capital subsidy τ distorts automation decisions, creating excessive automation drag.</p>
+</header>
+
+<div class="container">
+
+  <div class="scenario-bar">
+    <button class="scen-btn active" onclick="setScenario('custom',this)">Custom</button>
+    <button class="scen-btn" onclick="setScenario('baseline',this)">Balanced growth</button>
+    <button class="scen-btn" onclick="setScenario('soso',this)">So-so automation</button>
+    <button class="scen-btn" onclick="setScenario('excessive',this)">Excessive automation</button>
+    <button class="scen-btn" onclick="setScenario('newtasks',this)">New tasks surge</button>
+    <button class="scen-btn" onclick="setScenario('mismatch',this)">Skill mismatch</button>
+  </div>
+  <div id="scen-desc" class="scen-desc"></div>
+
+  <div class="main-grid">
+    <!-- LEFT CONTROLS -->
+    <div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Model parameters</span></div>
+        <div class="panel-body">
+          <div class="ctrl-group">
+            <div class="ctrl-head"><span class="ctrl-label">Automation frontier <i>I</i></span><span class="ctrl-val" id="v-I">0.40</span></div>
+            <input type="range" min="0" max="80" step="1" value="40" id="sl-I" oninput="update()">
+            <div class="ctrl-sublabel">Tasks that <em>can</em> be automated (technology). Actual automation also depends on τ.</div>
+          </div>
+          <div class="ctrl-group">
+            <div class="ctrl-head"><span class="ctrl-label">New tasks frontier <i>N</i></span><span class="ctrl-val" id="v-N">1.00</span></div>
+            <input type="range" min="50" max="150" step="1" value="100" id="sl-N" oninput="update()">
+            <div class="ctrl-sublabel">Range of labor‑intensive tasks (reinstatement effect)</div>
+          </div>
+          <div class="ctrl-group">
+            <div class="ctrl-head"><span class="ctrl-label">Machine productivity <i>γ<sub>M</sub></i></span><span class="ctrl-val" id="v-gM">1.00</span></div>
+            <input type="range" min="50" max="250" step="1" value="100" id="sl-gM" oninput="update()">
+            <div class="ctrl-sublabel">Deepening of automation (intensive margin)</div>
+          </div>
+          <div class="ctrl-group">
+            <div class="ctrl-head"><span class="ctrl-label">Capital stock <i>K</i></span><span class="ctrl-val" id="v-K">1.00</span></div>
+            <input type="range" min="50" max="300" step="1" value="100" id="sl-K" oninput="update()">
+          </div>
+          <div class="ctrl-group">
+            <div class="ctrl-head"><span class="ctrl-label tooltip" title="Extension beyond baseline: skill threshold S">Skill threshold <i>S</i> ⓘ</span><span class="ctrl-val" id="v-S">0.70</span></div>
+            <input type="range" min="1" max="95" step="1" value="70" id="sl-S" oninput="update()">
+            <div class="ctrl-sublabel">Only low‑skill workers can perform tasks below S (mismatch extension)</div>
+          </div>
+          <div class="ctrl-group">
+            <div class="ctrl-head"><span class="ctrl-label">Capital subsidy <i>τ</i></span><span class="ctrl-val" id="v-tau">0%</span></div>
+            <input type="range" min="0" max="50" step="1" value="0" id="sl-tau" oninput="update()">
+            <div class="ctrl-sublabel">Tax bias toward capital → excessive automation (distorts effective rental rate: R<sub>eff</sub> = R·(1‑τ))</div>
+          </div>
+          <div style="border-top:1px solid var(--border);margin:1rem 0 1rem;"></div>
+          <div class="ctrl-group">
+            <div class="ctrl-head"><span class="ctrl-label">Labor productivity slope <i>α<sub>L</sub></i></span><span class="ctrl-val" id="v-aL">1.00</span></div>
+            <input type="range" min="10" max="300" step="1" value="100" id="sl-aL" oninput="update()">
+          </div>
+          <div class="ctrl-group">
+            <div class="ctrl-head"><span class="ctrl-label">Machine productivity slope <i>α<sub>M</sub></i></span><span class="ctrl-val" id="v-aM">0.50</span></div>
+            <input type="range" min="10" max="300" step="1" value="50" id="sl-aM" oninput="update()">
+            <div class="ctrl-sublabel">α<sub>L</sub> > α<sub>M</sub> ensures labor comparative advantage in higher tasks (A1)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-vis">
+        <div class="ctrl-head" style="margin-bottom:8px;"><span style="font-family:var(--font-mono);font-size:10px;">Task range visualizer</span></div>
+        <div class="task-bar-wrap" id="task-bar">
+          <div class="task-seg" id="seg-machine" style="left:0;background:#2a1f14;color:var(--amber);">machines</div>
+          <div class="task-seg" id="seg-lowskill" style="background:#14201f;color:var(--accent2);">low‑skill</div>
+          <div class="task-seg" id="seg-highskill" style="background:#1a142b;color:var(--purple);">high‑skill</div>
+        </div>
+        <div class="task-labels"><span>0</span><span id="lbl-I" style="color:var(--amber);">I</span><span id="lbl-S" style="color:var(--accent2);">S</span><span id="lbl-N" style="color:var(--purple);">N</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">γ<sub>L</sub>(x) vs γ<sub>M</sub>(x) — comparative advantage</span></div>
+        <div class="panel-body" style="padding-bottom:0.5rem;">
+          <div class="legend"><div class="leg-item"><div class="leg-dot" style="background:#6db87a"></div>γ<sub>L</sub>(x)</div><div class="leg-item"><div class="leg-dot" style="background:#d4924a"></div>γ<sub>M</sub>(x)</div><div class="leg-item"><div class="leg-dot" style="background:#9b8fd4"></div>γ<sub>L</sub>/γ<sub>M</sub></div></div>
+          <div style="position:relative;height:160px;"><canvas id="gammaChart"></canvas></div>
+          <div id="a1-check" style="font-size:11px;margin-top:8px;padding:6px 10px;border-radius:4px;"></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:1rem;">
+        <div class="panel-header"><span class="panel-title">Effect decomposition</span></div>
+        <div class="panel-body">
+          <div class="effect-list">
+            <div class="effect-item"><div class="effect-head"><span class="effect-name">↓ Displacement effect</span><span class="effect-num" id="ef-disp-v">0.00</span></div><div class="effect-track"><div class="effect-fill" id="ef-disp" style="background:var(--red);width:0%"></div></div></div>
+            <div class="effect-item"><div class="effect-head"><span class="effect-name">↑ Productivity effect</span><span class="effect-num" id="ef-prod-v">0.00</span></div><div class="effect-track"><div class="effect-fill" id="ef-prod" style="background:var(--green);width:0%"></div></div></div>
+            <div class="effect-item"><div class="effect-head"><span class="effect-name">↑ Reinstatement (new tasks)</span><span class="effect-num" id="ef-rein-v">0.00</span></div><div class="effect-track"><div class="effect-fill" id="ef-rein" style="background:var(--blue);width:0%"></div></div></div>
+            <div class="effect-item"><div class="effect-head"><span class="effect-name">↑ Deepening of automation</span><span class="effect-num" id="ef-deep-v">0.00</span></div><div class="effect-track"><div class="effect-fill" id="ef-deep" style="background:var(--amber);width:0%"></div></div></div>
+            <div class="effect-item"><div class="effect-head"><span class="effect-name">↓ Excessive automation drag</span><span class="effect-num" id="ef-exc-v">0.00</span></div><div class="effect-track"><div class="effect-fill" id="ef-exc" style="background:var(--purple);width:0%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT OUTPUTS -->
+    <div>
+      <div class="metrics-grid">
+        <div class="metric-card"><div class="metric-name">Labor share s<sub>L</sub></div><div class="metric-val" id="m-ls">0.60</div><div class="metric-delta" id="d-ls"></div></div>
+        <div class="metric-card"><div class="metric-name">Wage W</div><div class="metric-val" id="m-w">1.00</div><div class="metric-delta" id="d-w"></div></div>
+        <div class="metric-card"><div class="metric-name">Output/worker Y/L</div><div class="metric-val" id="m-yw">1.00</div><div class="metric-delta" id="d-yw"></div></div>
+        <div class="metric-card"><div class="metric-name">W–Y/L gap</div><div class="metric-val" id="m-gap">0.00</div></div>
+      </div>
+
+      <div class="skill-grid">
+        <div class="skill-card"><div class="skill-name">Low‑skill wage W<sub>L</sub></div><div class="skill-val" id="m-wl">—</div><div class="skill-ratio" id="m-ineq"></div></div>
+        <div class="skill-card"><div class="skill-name">High‑skill wage W<sub>H</sub></div><div class="skill-val" id="m-wh">—</div></div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-wrap">
+          <div class="chart-title">Comparative statics: Automation (I) vs outcomes</div>
+          <div style="position:relative;height:180px;"><canvas id="compStatChart"></canvas></div>
+          <div class="ctrl-sublabel" style="margin-top:5px;">Labor share and wage as I varies from 0.2 to 0.8 (other parameters fixed)</div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">Effect magnitudes — current state</div>
+          <div style="position:relative;height:206px;"><canvas id="effectChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-title">Model interpretation</div>
+      <div class="interp-box" id="interp-box"></div>
+    </div>
+  </div>
+
+  <footer>Based on <strong>Acemoglu & Restrepo (2018)</strong> · Capital subsidy τ reduces effective rental rate R(1‑τ), distorting automation decisions (excessive automation). Skill threshold S is an extension (Section 5).</footer>
+</div>
+
+<script>
+const SCENARIOS = {
+  baseline: { I:40,N:100,gM:100,K:100,S:70,tau:0,aL:100,aM:50, desc:'<strong>Balanced growth:</strong> Automation and new tasks advance together. Labor share stable.' },
+  soso:     { I:65,N:100,gM:62, K:80, S:70,tau:0,aL:100,aM:50, desc:'<strong>So-so automation:</strong> Weak productivity effect → displacement dominates.' },
+  excessive:{ I:72,N:100,gM:120,K:100,S:70,tau:38,aL:100,aM:50,desc:'<strong>Excessive automation:</strong> High τ distorts capital cost, excessive automation drag reduces productivity gains.' },
+  newtasks: { I:50,N:130,gM:100,K:100,S:88,tau:0,aL:120,aM:40, desc:'<strong>New tasks surge:</strong> Strong reinstatement effect raises labor share.' },
+  mismatch: { I:60,N:110,gM:100,K:100,S:63,tau:5,aL:100,aM:50, desc:'<strong>Skill mismatch:</strong> S close to I → low‑skill workers squeezed, inequality spikes.' }
+};
+
+let prev=null, compChart=null, effectChart=null, gammaChart=null;
+const STEPS=200;
+
+function getV(){
+  return {
+    I:   +document.getElementById('sl-I').value/100,
+    N:   +document.getElementById('sl-N').value/100,
+    gM:  +document.getElementById('sl-gM').value/100,
+    K:   +document.getElementById('sl-K').value/100,
+    S:   +document.getElementById('sl-S').value/100,
+    tau: +document.getElementById('sl-tau').value/100,
+    aL:  +document.getElementById('sl-aL').value/100,
+    aM:  +document.getElementById('sl-aM').value/100
+  };
+}
+
+function gammaL(x, aL){ return Math.exp(aL*x); }
+function gammaM(x, aM, gM){ return gM * Math.exp(aM*x); }
+
+function integrate(fn, a, b, n){
+  if(a>=b) return 0;
+  let h=(b-a)/n, s=0;
+  for(let i=0;i<n;i++) s+=fn(a+(i+0.5)*h);
+  return s*h;
+}
+
+function computeB(I,N,aL,aM,gM){
+  const N0=N-1;
+  const lnGM = x => Math.log(Math.max(gammaM(x,aM,gM),1e-10));
+  const lnGL = x => Math.log(Math.max(gammaL(x,aL),1e-10));
+  return Math.exp(integrate(lnGM,N0,I,STEPS) + integrate(lnGL,I,N,STEPS));
+}
+
+function computeAll(v){
+  const {I,N,gM,K,S,tau,aL,aM}=v, L=1;
+  const NI = Math.max(N-I,0.02);
+  const IN1 = Math.max(I-(N-1),0.02);
+  const B = computeB(I,N,aL,aM,gM);
+  const Y = B * Math.pow(K/IN1, IN1) * Math.pow(L/NI, NI);
+  const W = NI * Y;
+  const R = IN1 * Y / K;
+  const ls = NI;
+
+  // Productivity effect using distorted rental rate (paper eq 8 with τ)
+  const gLI = gammaL(I,aL);
+  const gMI = gammaM(I,aM,gM);
+  const prodEffect = Math.log(Math.max(W/gLI,1e-10)) - Math.log(Math.max(R*(1-tau)/gMI,1e-10));
+  const dispEffect = 1 / NI;
+  const totalEffectOnW = -dispEffect + prodEffect;  // d ln W/dI
+
+  // Reinstatement (d ln W/dN)
+  const gLN = gammaL(N,aL);
+  const gMN1 = gammaM(N-1,aM,gM);
+  const reinProd = Math.log(Math.max(R/gMN1,1e-10)) - Math.log(Math.max(W/gLN,1e-10));
+  const reinDirect = 1/NI;
+  const reinEffect = reinProd + reinDirect;
+
+  // Deepening effect (increase gM by 5%)
+  const Bdeep = computeB(I,N,aL,aM,gM*1.05);
+  const Ydeep = Bdeep * Math.pow(K/IN1, IN1) * Math.pow(L/NI, NI);
+  const deepEffect = Math.max(0, (Math.log(Ydeep)-Math.log(Y))/0.05);
+
+  // Excessive automation drag (paper eq with τ)
+  const excDrag = tau * R * IN1;
+
+  // Skill split (extension)
+  let WL=null, WH=null;
+  if(S>I && S<N){
+    WL = Y * (S-I) / L;
+    WH = Y * (N-S) / L;
+  }
+
+  // A1 check
+  const ratioIncreasing = aL > aM;
+  const a1ok = ratioIncreasing;
+  return {W,Y,ls,R,prodEffect,dispEffect,reinEffect,deepEffect,excDrag,WL,WH,ratioIncreasing,a1ok, totalEffectOnW};
+}
+
+function setMetric(id,val,pval,dec,bad){
+  const el=document.getElementById('m-'+id); if(!el)return;
+  el.textContent=val.toFixed(dec);
+  if(pval!==null){
+    const d=val-pval;
+    const cls=Math.abs(d)<0.001?'':(d>0?(bad?'red':'green'):(bad?'green':'red'));
+    el.className='metric-val '+cls;
+    const de=document.getElementById('d-'+id);
+    if(de&&Math.abs(d)>=0.001){de.textContent=(d>0?'+':'')+d.toFixed(3);de.className='metric-delta '+(cls==='green'?'pos':'neg');}
+    else if(de){de.textContent='';de.className='metric-delta';}
+  }
+}
+
+function setBar(id,val,mx){ 
+  let pct=Math.min(100,Math.max(0,(val/mx)*100));
+  document.getElementById('ef-'+id).style.width=pct+'%';
+  document.getElementById('ef-'+id+'-v').textContent=val.toFixed(2);
+}
+
+function updateGammaChart(v){
+  const {I,N,aL,aM,gM}=v;
+  const pts=60, xmin=Math.max(0,N-1), xmax=N;
+  let xs=[], gl=[], gm=[], ratio=[];
+  for(let i=0;i<=pts;i++){
+    let x=xmin+(xmax-xmin)*i/pts;
+    xs.push(x);
+    let glv=gammaL(x,aL), gmv=gammaM(x,aM,gM);
+    gl.push(glv/gammaL(xmin,aL));
+    gm.push(gmv/gammaL(xmin,aL));
+    ratio.push(glv/gmv);
+  }
+  if(!gammaChart){
+    gammaChart=new Chart(document.getElementById('gammaChart'),{type:'line',data:{labels:xs,datasets:[
+      {label:'γL',data:gl,borderColor:'#6db87a',borderWidth:2,pointRadius:0},
+      {label:'γM',data:gm,borderColor:'#d4924a',borderWidth:2,pointRadius:0},
+      {label:'γL/γM',data:ratio,borderColor:'#9b8fd4',borderWidth:1.5,pointRadius:0,borderDash:[3,3]}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7a7d8a'}},y:{ticks:{color:'#7a7d8a'}}}}});
+  } else {
+    gammaChart.data.labels=xs; gammaChart.data.datasets[0].data=gl; gammaChart.data.datasets[1].data=gm; gammaChart.data.datasets[2].data=ratio;
+    gammaChart.update('none');
+  }
+  const box=document.getElementById('a1-check');
+  if(v.aL>v.aM){
+    box.style.background='rgba(109,184,122,0.1)';box.innerHTML='✓ Assumption A1 holds (αL > αM) → labor comparative advantage in higher tasks.';
+  } else {
+    box.style.background='rgba(224,92,92,0.1)';box.innerHTML='✗ A1 violated (αL ≤ αM) → machines have comparative advantage everywhere.';
+  }
+}
+
+function updateComparativeStatics(v){
+  let iVals=[0.2,0.3,0.4,0.5,0.6,0.7,0.8];
+  let lsVals=[], wVals=[];
+  for(let Ix of iVals){
+    let vx={...v, I:Ix};
+    let res=computeAll(vx);
+    lsVals.push(res.ls);
+    wVals.push(res.W);
+  }
+  if(!compChart){
+    compChart=new Chart(document.getElementById('compStatChart'),{type:'line',data:{labels:iVals,datasets:[
+      {label:'Labor share',data:lsVals,borderColor:'#5ba3d4',borderWidth:2,pointRadius:3},
+      {label:'Wage (index)',data:wVals,borderColor:'#6db87a',borderWidth:2,pointRadius:3,borderDash:[5,3]}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{x:{title:{display:true,text:'Automation I',color:'#7a7d8a'}}}}});
+  } else {
+    compChart.data.datasets[0].data=lsVals; compChart.data.datasets[1].data=wVals;
+    compChart.update();
+  }
+}
+
+function update(){
+  const v=getV();
+  document.getElementById('v-I').textContent=v.I.toFixed(2);
+  document.getElementById('v-N').textContent=v.N.toFixed(2);
+  document.getElementById('v-gM').textContent=v.gM.toFixed(2);
+  document.getElementById('v-K').textContent=v.K.toFixed(2);
+  document.getElementById('v-S').textContent=v.S.toFixed(2);
+  document.getElementById('v-tau').textContent=(v.tau*100).toFixed(0)+'%';
+  document.getElementById('v-aL').textContent=v.aL.toFixed(2);
+  document.getElementById('v-aM').textContent=v.aM.toFixed(2);
+
+  const c=computeAll(v);
+  setMetric('ls',c.ls,prev?.ls,2,true);
+  setMetric('w',c.W,prev?.W,3,false);
+  setMetric('yw',c.Y,prev?.Y,3,false);
+  const gap=c.Y-c.W;
+  document.getElementById('m-gap').textContent=gap.toFixed(3);
+
+  if(v.S>v.I && c.WL!==null){
+    document.getElementById('m-wl').textContent=c.WL.toFixed(3);
+    document.getElementById('m-wh').textContent=c.WH.toFixed(3);
+    let ratio=c.WH/c.WL;
+    document.getElementById('m-ineq').innerHTML=`W<sub>H</sub>/W<sub>L</sub> = ${ratio.toFixed(2)}`;
+  } else {
+    document.getElementById('m-wl').textContent='—'; document.getElementById('m-wh').textContent='—';
+    document.getElementById('m-ineq').innerHTML='Raise S > I to see mismatch effect';
+  }
+
+  const mx=3.5;
+  setBar('disp',c.dispEffect,mx); setBar('prod',c.prodEffect,mx);
+  setBar('rein',c.reinEffect,mx); setBar('deep',c.deepEffect,mx); setBar('exc',c.excDrag,mx);
+
+  // task bar
+  const total=v.N;
+  const mPct=(v.I/total*100).toFixed(1)+'%';
+  let lPct=0, hLeft=v.I/total*100;
+  if(v.S>v.I){ lPct=((v.S-v.I)/total*100).toFixed(1)+'%'; hLeft=((v.S)/total*100).toFixed(1)+'%'; }
+  let hPct=v.N>Math.max(v.S,v.I)?((v.N-Math.max(v.S,v.I))/total*100).toFixed(1)+'%':'0%';
+  document.getElementById('seg-machine').style.width=mPct;
+  document.getElementById('seg-lowskill').style.width=lPct; document.getElementById('seg-lowskill').style.left=(v.I/total*100)+'%';
+  document.getElementById('seg-highskill').style.width=hPct; document.getElementById('seg-highskill').style.left=hLeft;
+  document.getElementById('lbl-I').style.left=(v.I/total*100)+'%';
+  document.getElementById('lbl-S').style.left=(v.S/total*100)+'%';
+
+  updateGammaChart(v);
+  updateComparativeStatics(v);
+
+  // effect chart (bar)
+  const effData=[c.dispEffect,c.prodEffect,c.reinEffect,c.deepEffect,c.excDrag];
+  if(!effectChart){
+    effectChart=new Chart(document.getElementById('effectChart'),{type:'bar',data:{labels:['Displacement','Productivity','Reinstatement','Deepening','Excess drag'],datasets:[{data:effData,backgroundColor:['#e05c5c','#6db87a','#5ba3d4','#d4924a','#9b8fd4'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v.toFixed(1)}}}}});
+  } else { effectChart.data.datasets[0].data=effData; effectChart.update('none'); }
+
+  // interpretation
+  let lines=[];
+  if(!c.ratioIncreasing) lines.push('<strong>⚠ Assumption A1 violated</strong> — machines have comparative advantage everywhere. Raise α<sub>L</sub> > α<sub>M</sub>.');
+  if(c.ls<0.35) lines.push('<strong>Labor share critically low</strong> — automation outpaces new tasks.');
+  else if(c.ls>0.65) lines.push('<strong>Labor share high</strong> — new tasks dominate automation.');
+  if(v.tau>0.1) lines.push(`<strong>Excessive automation drag active</strong> (τ=${(v.tau*100).toFixed(0)}%). Capital subsidy distorts effective rental rate → firms automate even when not socially efficient.`);
+  if(c.reinEffect>c.dispEffect) lines.push('<strong>Reinstatement dominates displacement</strong> — new tasks offset automation.');
+  if(v.S>v.I && c.WL && (c.WH/c.WL)>2.5) lines.push('<strong>Skill mismatch severe</strong>: low‑skill wage depressed, inequality high.');
+  if(c.prodEffect<0.5 && c.dispEffect>0.5) lines.push('<strong>So‑so automation</strong>: weak productivity effect cannot compensate displacement.');
+  document.getElementById('interp-box').innerHTML=lines.join('<br><br>') || 'Adjust sliders — each parameter maps to a mechanism in Acemoglu & Restrepo (2018).';
+
+  prev=c;
+}
+
+function setScenario(key,btn){
+  document.querySelectorAll('.scen-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const descDiv=document.getElementById('scen-desc');
+  if(key==='custom'){ descDiv.className='scen-desc'; return; }
+  const s=SCENARIOS[key];
+  document.getElementById('sl-I').value=s.I; document.getElementById('sl-N').value=s.N;
+  document.getElementById('sl-gM').value=s.gM; document.getElementById('sl-K').value=s.K;
+  document.getElementById('sl-S').value=s.S; document.getElementById('sl-tau').value=s.tau;
+  document.getElementById('sl-aL').value=s.aL; document.getElementById('sl-aM').value=s.aM;
+  descDiv.innerHTML=s.desc; descDiv.className='scen-desc visible';
+  prev=null; update();
+}
+
+update();
+</script>
+</body>
+</html>
